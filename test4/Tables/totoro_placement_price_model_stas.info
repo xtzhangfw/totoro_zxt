@@ -1,0 +1,6 @@
+id 0 INT
+network_id 1 INT
+year 2 INT
+month 3 INT
+price_model 4 STRING
+count 5 INT

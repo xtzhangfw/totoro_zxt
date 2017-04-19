@@ -2,7 +2,7 @@
 import os,sys,math
 from Scanner import *
 
-class CExpParser:
+class CExpCaler:
     """ 1<3 """
     def __init__(self, scanner, tableHead, dataItem):
         self.scanner = scanner
@@ -10,7 +10,7 @@ class CExpParser:
         self.tableHead=tableHead
         self.dataItem = dataItem
 
-    def cparse(self):
+    def ccal(self):
         para = []
         str1 = self.scanner.token
         para.append(str1)
@@ -71,26 +71,25 @@ class CExpParser:
                     return True
                 return False
         return False
- 
 
-class ExpParser(CExpParser):
+class ExpCaler(CExpCaler):
     """ 1<3 AND 1<4"""
     def __init__(self, scanner, tableHead, dataItem):
-        CExpParser.__init__(self, scanner, tableHead, dataItem)
+        CExpCaler.__init__(self, scanner, tableHead, dataItem)
 
-    def parse(self):
+    def cal(self):
         para=[]
         if self.scanner.token == "(":
             self.scanner.next()
-            para.append(self.parse())
+            para.append(self.cal())
             self.scanner.next()
         else:
-            para.append(self.cparse())
+            para.append(self.ccal())
 
         if self.scanner.token.upper() == "AND" or self.scanner.token.upper() == "OR":
             para.append(self.scanner.token.upper())
             self.scanner.next()
-            para.append(self.parse())
+            para.append(self.cal())
 
         if len(para)<=0:
             return True
@@ -105,10 +104,6 @@ class ExpParser(CExpParser):
             return False
 
 
-
-    
-        
-                
 import random
 if __name__ == "__main__":
     oplist = [">=","<=", ">", "<", "==", "!="]
@@ -128,11 +123,11 @@ if __name__ == "__main__":
     for i in range(1,10000):
         tests=genStr(5)
         print i
-        p = ExpParser(Scanner(tests), {}, [])
-        if p.parse()!=eval(tests):
+        p = ExpCaler(Scanner(tests), {}, [])
+        if p.cal()!=eval(tests):
             print tests
 
-    print ExpParser(Scanner("221== 924 or  621== 395 and 400== 683 or  979!= 543"),{},[]).parse(), eval("221== 924 or  621== 395 and 400== 683 or  979!= 543")
+    print ExpCaler(Scanner("221== 924 or  621== 395 and 400== 683 or  979!= 543"),{},[]).cal(), eval("221== 924 or  621== 395 and 400== 683 or  979!= 543")
     
 
 

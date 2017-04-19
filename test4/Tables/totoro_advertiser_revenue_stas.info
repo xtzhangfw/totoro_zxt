@@ -1,0 +1,7 @@
+id 0 INT
+network_id 1 INT
+year 2 INT
+month 3 INT
+advertiser 4 STRING
+bill_event 5 INT
+bill_revenue 6 FLOAT

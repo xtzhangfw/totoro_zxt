@@ -69,7 +69,7 @@ class FunListParser:
 
                 
 if __name__ == "__main__":
-    p = FunListParser(Scanner(" AVE(  a,  b  ),  MIN(a), b , c,,"))
+    p = FunListParser(Scanner(" AVE(  a,  'b  ahe' , -0.2e2.0, +9e8  ),  MIN(a), b , c,,"))
     p.parse()
     print p.res
     

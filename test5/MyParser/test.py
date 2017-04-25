@@ -12,14 +12,14 @@ if __name__ == "__main__":
                 ans = genStr(n-1) + " and " + genStr(n-1)
             else:
                 ans = genStr(n-1) + " or  " + genStr(n-1)
-	if random.randint(0,1)>10:
+	if random.randint(0,10)>2:
             ans = "(" + ans + ")"
                 
         return ans
 
     fp=open("exp.txt","w")
-    for i in range(1,10):
-        tests=genStr(2)
+    for i in range(0,1000):
+        tests=genStr(15)
         fp.write(tests + "\n")
 	print eval(tests)
     fp.close()

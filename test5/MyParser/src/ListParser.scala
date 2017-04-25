@@ -127,10 +127,10 @@ class Parser {
   }
 
   def expCal(scanner: Scanner, tableHead: Map[String,Array[String]], dataItem:Array[String], sta:Boolean, op:String): (Boolean, Scanner) = {
-    val tmp = cexpCal(scanner,tableHead, dataItem)
+    val tmp = exp1Cal(scanner,tableHead, dataItem, true, "AND")
     val ans:Boolean = if(op=="AND"){ tmp._1 && sta }else{ tmp._1 || sta }
     val tmp1 = tmp._2.next()
-    if(tmp1._1.toUpperCase() == "AND" || tmp1._1.toUpperCase() == "OR"){
+    if(tmp1._1.toUpperCase() == "OR"){
       expCal(tmp1._2, tableHead, dataItem, ans, tmp1._1.toUpperCase)
     }
     else{
@@ -138,7 +138,17 @@ class Parser {
     }
   }
 
-
+  def exp1Cal(scanner: Scanner, tableHead: Map[String,Array[String]], dataItem:Array[String], sta:Boolean, op:String): (Boolean, Scanner) = {
+    val tmp = cexpCal(scanner,tableHead, dataItem)
+    val ans:Boolean = if(op=="AND"){ tmp._1 && sta }else{ tmp._1 || sta }
+    val tmp1 = tmp._2.next()
+    if(tmp1._1.toUpperCase() == "AND"){
+      exp1Cal(tmp1._2, tableHead, dataItem, ans, tmp1._1.toUpperCase)
+    }
+    else{
+      (ans, tmp._2)
+    }
+  }
 
   def cexpParse(scanner:Scanner):(String, Scanner) = {
     val tmp = scanner.next()
@@ -228,6 +238,7 @@ object TestListParser {
       val ansexpcal = pr.expCal(new Scanner(calstr, 0), Map(), Array(), true, "AND")
       if(ansexpcal._1){ outf.write("True\n")}
       else{ outf.write("False\n")}
+      //println(line)
     }
     outf.close()
   }

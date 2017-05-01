@@ -1,7 +1,11 @@
+package MyParser
+
 import java.util
 
 import MyScanner.Scanner
 
+import scala.collection.mutable
+/*
 class FunItem(val FunName:String, val ParaList: List[String]){
   override def toString: String = {
     super.toString
@@ -10,14 +14,18 @@ class FunItem(val FunName:String, val ParaList: List[String]){
     ans
   }
 }
+*/
 
 class Parser {
 
-  def cexpCal(scanner: Scanner, tableHead: Map[String, Array[String]], dataItem: Array[String]): (Boolean, Scanner) ={
+  def cexpCal(scanner: Scanner,
+              tableInfo:(String, mutable.Map[String,Int],mutable.Map[String,String]),
+              dataItem: Array[String]): (Boolean, Scanner) ={
+
     val tmp = scanner.next()
     val tmp1 = tmp._2.next()
     if(tmp._1 == "("){
-      val tmp2 = expCal(tmp._2, tableHead, dataItem, true, "AND")
+      val tmp2 = expCal(tmp._2, tableInfo, dataItem, true, "AND")
       val tmp3 = tmp2._2.next()
       (tmp2._1, tmp3._2)
     }
@@ -28,16 +36,19 @@ class Parser {
 
       val vtype = if(tmp._1(0)=='\'' || tmp2._1(0)=='\''){ "STRING"}
       else if((tmp._1(0)>='a' && tmp._1(0)<='z') || (tmp._1(0)>='A' && tmp._1(0)<='Z') || tmp._1(0)=='_'){
-        tableHead(tmp._1)(0)
+        tableInfo._3(tmp._1)
       }
       else if((tmp2._1(0)>='a' && tmp2._1(0)<='z') || (tmp2._1(0)>='A' && tmp2._1(0)<='Z') || tmp2._1(0)=='_'){
-        tableHead(tmp2._1)(0)
+        tableInfo._3(tmp2._1)
       }
       else{
         "FLOAT"
       }
-      val para1 = tmp._1
-      val para2 = tmp2._1
+      val p1 = tmp._1
+      val p2 = tmp2._1
+      val para1 = if(p1.length>0 && ((p1(0)>='a' && p1(0)<='z') || (p1(0)>='A' && p1(0)<='Z'))){dataItem(tableInfo._2(p1))}else{p1}
+      val para2 = if(p2.length>0 && ((p2(0)>='a' && p2(0)<='z') || (p2(0)>='A' && p2(0)<='Z'))){dataItem(tableInfo._2(p2))}else{p2}
+
       val ans = if(vtype=="INT") {
         if (tmp1._1 == ">") {
           if (para1.toInt > para2.toInt) true else false
@@ -115,10 +126,10 @@ class Parser {
       }else if(tmp._1(0)=='+' || tmp._1(0)=='-' || tmp._1(0)=='.' || (tmp._1(0)>='0' && tmp._1(0)<='9')){
         tmp._1.toFloat
       }else{
-        if(tableHead(tmp._1)(0) == "INT"){ dataItem(tableHead(tmp._1)(1).toInt).toInt}
-        else if(tableHead(tmp._1)(0) == "FLOAT"){ dataItem(tableHead(tmp._1)(1).toInt).toFloat}
-        else if(tableHead(tmp._1)(0) == "STRING"){ dataItem(tableHead(tmp._1)(1).toInt).toString}
-        else{ dataItem(tableHead(tmp._1)(1).toInt).toString}
+        if(tableInfo._3(tmp._1) == "INT"){ dataItem(tableInfo._2(tmp._1).toInt).toInt}
+        else if(tableInfo._3(tmp._1) == "FLOAT"){ dataItem(tableInfo._2(tmp._1).toInt).toFloat}
+        else if(tableInfo._3(tmp._1) == "STRING"){ dataItem(tableInfo._2(tmp._1).toInt).toString}
+        else{ dataItem(tableInfo._2(tmp._1).toInt).toString}
       }
 
       val ans = if(para1==0 || para1=="")false else true
@@ -126,24 +137,31 @@ class Parser {
     }
   }
 
-  def expCal(scanner: Scanner, tableHead: Map[String,Array[String]], dataItem:Array[String], sta:Boolean, op:String): (Boolean, Scanner) = {
-    val tmp = exp1Cal(scanner,tableHead, dataItem, true, "AND")
+  def expCal(scanner: Scanner,
+             tableInfo:(String, mutable.Map[String,Int],mutable.Map[String,String]),
+             dataItem:Array[String],
+             sta:Boolean, op:String): (Boolean, Scanner) = {
+
+    val tmp = exp1Cal(scanner,tableInfo, dataItem, true, "AND")
     val ans:Boolean = if(op=="AND"){ tmp._1 && sta }else{ tmp._1 || sta }
     val tmp1 = tmp._2.next()
     if(tmp1._1.toUpperCase() == "OR"){
-      expCal(tmp1._2, tableHead, dataItem, ans, tmp1._1.toUpperCase)
+      expCal(tmp1._2, tableInfo, dataItem, ans, tmp1._1.toUpperCase)
     }
     else{
       (ans, tmp._2)
     }
   }
 
-  def exp1Cal(scanner: Scanner, tableHead: Map[String,Array[String]], dataItem:Array[String], sta:Boolean, op:String): (Boolean, Scanner) = {
-    val tmp = cexpCal(scanner,tableHead, dataItem)
+  def exp1Cal(scanner: Scanner,
+              tableInfo:(String, mutable.Map[String,Int],mutable.Map[String,String]),
+              dataItem:Array[String],
+              sta:Boolean, op:String): (Boolean, Scanner) = {
+    val tmp = cexpCal(scanner,tableInfo, dataItem)
     val ans:Boolean = if(op=="AND"){ tmp._1 && sta }else{ tmp._1 || sta }
     val tmp1 = tmp._2.next()
     if(tmp1._1.toUpperCase() == "AND"){
-      exp1Cal(tmp1._2, tableHead, dataItem, ans, tmp1._1.toUpperCase)
+      exp1Cal(tmp1._2, tableInfo, dataItem, ans, tmp1._1.toUpperCase)
     }
     else{
       (ans, tmp._2)
@@ -194,7 +212,7 @@ class Parser {
     }
   }
 
-  def funListParse(scanner: Scanner, ans:List[FunItem]): (List[FunItem], Scanner) = {
+  def funListParse(scanner: Scanner, ans:List[List[String]]): (List[List[String]], Scanner) = {
     val tmp = scanner.next()
     if(tmp._1 == ","){
       funListParse(tmp._2, ans)
@@ -203,16 +221,17 @@ class Parser {
       val tmp1 = tmp._2.next()
       if(tmp1._1 == "("){
         val para = listParse(tmp1._2, Nil)
-        val item = new FunItem(tmp._1, para._1)
+        val item = tmp._1 :: para._1
         val tmp2 = para._2.next()
-        funListParse(tmp2._2, item :: ans)
+        if(tmp2._2.next()._1==","){ funListParse(tmp2._2, item :: ans) }
+        else{ ((item :: ans).reverse, tmp2._2)}
       }
       else if(tmp1._1 == ","){
-        val item = new FunItem("DEFAULT", List(tmp._1))
+        val item = "DEFAULT" :: List(tmp._1)
         funListParse(tmp1._2, item :: ans)
       }
       else{
-        val item = new FunItem("DEFAULT", List(tmp._1))
+        val item = "DEFAULT" :: List(tmp._1)
         ((item :: ans).reverse, tmp._2)
       }
 
@@ -235,7 +254,7 @@ object TestListParser {
     val outf = new PrintWriter(new File("scala_res.txt"))
     for(line <- sc.getLines()) {
       val calstr = line
-      val ansexpcal = pr.expCal(new Scanner(calstr, 0), Map(), Array(), true, "AND")
+      val ansexpcal = pr.expCal(new Scanner(calstr, 0), ("", mutable.Map(), mutable.Map()), Array(), true, "AND")
       if(ansexpcal._1){ outf.write("True\n")}
       else{ outf.write("False\n")}
       //println(line)

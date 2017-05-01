@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact name="MyParser:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/MyParser_jar</output-path>
+    <root id="root">
+      <element id="archive" name="MyParser.jar">
+        <element id="module-output" name="MyParser" />
+      </element>
+      <element id="library" level="application" name="scala-sdk-2.11.6 (2)" />
+      <element id="library" level="project" name="scala-sdk-2.11.8" />
+      <element id="library" level="project" name="jars" />
+    </root>
+  </artifact>
+</component>

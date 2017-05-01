@@ -1,0 +1,3 @@
+Placement Table
+network_idstart_dateend_datebudget_modelplacement_typeprice_modelbilling_methodcontrolling_measure
+INTDATEDATESTRINGSTRINGSTRINGSTRINGSTRING

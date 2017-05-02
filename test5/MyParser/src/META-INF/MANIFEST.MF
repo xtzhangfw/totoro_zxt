@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Class-Path: scala-library.jar scala-xml.jar scala-actors.jar scala-par
+ ser-combinators.jar scala-reflect.jar
+Main-Class: TSQL
+

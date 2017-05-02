@@ -3,6 +3,8 @@ import java.io.File
 
 import MyScanner.Scanner
 import MyParser.Parser
+
+
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.SparkConf
@@ -11,57 +13,125 @@ import org.apache.hadoop.fs._
 import scala.collection.mutable
 import scala.math._
 
+
 object Cst{
   val SPACE=Character.toString(1.toChar)
 }
 
 object Funs{
 
+  def isColName(s:String): Boolean ={
+    if(s.length<=0) false
+    else{
+      if((s(0)>='a' && s(0)<='z') || (s(0)>='A' && s(0)<='Z')) true
+      else false
+    }
+  }
+
+  def isList(v:Any):Boolean = {
+    v match{
+      case _:List[Any]=>true
+      case _=>false
+    }
+  }
+
+  def defaultFlatten(fun: List[Any]):List[Any]={
+    val funName = fun.head.toString.toUpperCase()
+    val par = fun.tail
+    val newPar = par.map(f=>
+      if(isList(f)){defaultFlatten(f.asInstanceOf[List[Any]])}
+      else{f}
+    )
+    val nNewPar=newPar.flatMap(f=>
+      if(isList(f) && f.asInstanceOf[List[Any]].head.toString=="DEFAULT"){
+        f.asInstanceOf[List[Any]].tail
+      }
+      else{
+        List(f)
+      }
+    )
+    funName :: nNewPar
+  }
+
+  def calMapFun(fun: List[Any]):List[Any]={
+    val funName = fun.head.toString.toUpperCase()
+    val par = fun.tail
+    val newPar = par.map(f=>
+      if(isList(f)){calMapFun(f.asInstanceOf[List[Any]])}
+      else{ f }
+    )
+
+    def canCal(parL:List[Any]):Boolean={
+      if(parL.length<=0) return true
+      if(isList(parL.head)){
+        val par = parL.head.asInstanceOf[List[Any]]
+        if(par.head.toString!="DEFAULT"){ return false }
+        else{
+          val flag = canCal(par)
+          if(!flag) return false
+        }
+      }
+      canCal(parL.tail)
+    }
+
+    if(!canCal(newPar)){ return funName :: newPar }
+    else{
+      if(funName=="ABS"){
+        val nNewPar = newPar.map(f=>
+          if(isList(f)){ abs(f.asInstanceOf[List[Any]].tail.head.toString.toFloat).toString}
+          else{ abs(f.toString.toFloat).toString}
+        )
+        return "DEFAULT" :: nNewPar
+      }
+      else{
+        return funName :: newPar
+      }
+    }
+  }
+
+  def reducefun(lA:List[Any], lB:List[Any]):List[Any]={
+    
+    Nil
+  }
+
   def mapfun(s:String, sql: String,
-             tableInfo:(String,mutable.Map[String, Int],mutable.Map[String,String])):(String, List[List[String]])={
+             tableInfo:(String,mutable.Map[String, Int],mutable.Map[String,String])):(String, List[Any])={
 
     val scanner = new Scanner(sql, 0).next()._2
     val pr = new Parser
     val ans1 = pr.funListParse(scanner, Nil)
-    val selList = ans1._1
+    val selList = "DEFAULT" :: ans1._1
 
     val ans2 = ans1._2.next()._2.next()._2.next()
 
     val conScanner =  if(ans2._1.toUpperCase() == "WHERE"){ ans2._2 }else{ new Scanner("1",0)}
     val scGroup = if(ans2._1.toUpperCase()=="WHERE"){ pr.expParse(ans2._2,"")._2 }else{ ans1._2 }
     val groupScanner=if(scGroup.next()._1.toUpperCase() == "GROUP"){scGroup.next()._2}else{ new Scanner("GROUPALL(*)",0)}
-    val groupList = pr.funListParse(groupScanner, Nil)._1
+    val groupList = "DEFAULT" :: pr.funListParse(groupScanner, Nil)._1
 
     val item = s.split(Cst.SPACE)
 
     val flag = pr.expCal(conScanner, tableInfo, item, true, "AND")._1
 
-    def calFunList(fl: List[List[String]], cur: List[List[String]]):List[List[String]]={
-      if(fl.length<=0) cur.reverse
-      else {
-        val para = fl.head.tail.map(
-          s => if ((s(0) >= 'a' && s(0) <= 'z') || (s(0) >= 'A' && s(0) <= 'Z')) {
-            item(tableInfo._2(s))
-          } else {
-            s
-          })
-        val funName = fl.head.head
-        if (funName == "ABS") {
-          val fitem = "DEFAULT" :: List(abs(para.head.toFloat).toString)
-          calFunList(fl.tail, fitem :: cur)
-        } else {
-          val fitem = funName :: para
-          calFunList(fl.tail, fitem :: cur)
+    def repFun(fun: List[Any]):List[Any]={//replace the identifier with value
+      val funName = fun.head.toString.toUpperCase()
+      val par = fun.tail
+      val newPar = par.map(f=>
+        if(isList(f)){ repFun(f.asInstanceOf[List[Any]])}
+        else{
+          if(isColName(f.toString)){ item(tableInfo._2(f.toString)) }
+          else if(f.toString=="*"){ "DEFAULT" :: item.toList }
+          else{ f }
         }
-      }
+      )
+      funName :: newPar
     }
 
-
-    if(flag==false){ ("",Nil) }
+    if(!flag){ ("",Nil) }
     else{
-      val gl = calFunList(groupList, Nil)
-      val glStr = gl.map(l=>l.tail.head).mkString(" ")
-      val sl = calFunList(selList, Nil)
+      val gl = defaultFlatten(calMapFun(repFun(groupList)))
+      val glStr = gl.tail.toString()
+      val sl = defaultFlatten(calMapFun(repFun(selList)))
       (glStr, sl)
     }
 
@@ -133,6 +203,7 @@ object TSQL {
     val rdd = sc.textFile(tablePath + "/" + tname)
 
     val rdd1 = rdd.map(Funs.mapfun(_,sql,tInfo)).filter(a=>a._1.length>0).collect()
+    //val rdd2 = rdd1.reduceByKey(Funs.reducefun).collect()
     for(r<-rdd1){println(r)}
 
     Array(Array())
@@ -154,9 +225,7 @@ object TSQL {
 
 
   def main(args: Array[String]) {
-    val ans = query("show tables")
-    query("select network_id from d_placement where network_id=168282 group network_id")
-    //cmd_SELECT(new Scanner("id,sum( age ,2 ,4),name where id>10 and name<10 group id,age,day(name)", 0))
+    query("select network_id,price_model, abs(sum(abs(network_id,2000), abs(network_id), abs(2000,2000))) from d_placement where network_id=168282 group network_id")
   }
 
 

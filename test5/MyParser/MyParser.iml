@@ -18,5 +18,6 @@
         <jarDirectory url="file://$MODULE_DIR$/src" recursive="false" type="SOURCES" />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="jars" level="project" />
   </component>
 </module>

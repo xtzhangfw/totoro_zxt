@@ -5,9 +5,8 @@
       <element id="archive" name="MyParser.jar">
         <element id="module-output" name="MyParser" />
       </element>
-      <element id="library" level="application" name="scala-sdk-2.11.6 (2)" />
-      <element id="library" level="project" name="scala-sdk-2.11.8" />
       <element id="library" level="project" name="jars" />
+      <element id="library" level="application" name="scala-sdk-2.11.6 (2)" />
     </root>
   </artifact>
 </component>

@@ -212,7 +212,7 @@ class Parser {
     }
   }
 
-  def funListParse(scanner: Scanner, ans:List[List[String]]): (List[List[String]], Scanner) = {
+  def funListParse(scanner: Scanner, ans:List[Any]): (List[Any], Scanner) = {
     val tmp = scanner.next()
     if(tmp._1 == ","){
       funListParse(tmp._2, ans)
@@ -220,7 +220,7 @@ class Parser {
     else{
       val tmp1 = tmp._2.next()
       if(tmp1._1 == "("){
-        val para = listParse(tmp1._2, Nil)
+        val para = funListParse(tmp1._2, Nil)
         val item = tmp._1 :: para._1
         val tmp2 = para._2.next()
         if(tmp2._2.next()._1==","){ funListParse(tmp2._2, item :: ans) }
@@ -234,7 +234,6 @@ class Parser {
         val item = "DEFAULT" :: List(tmp._1)
         ((item :: ans).reverse, tmp._2)
       }
-
     }
   }
 }
@@ -246,8 +245,10 @@ object TestListParser {
     val pr = new Parser
     val ans = pr.listParse(new Scanner("  hello   , world, 12,'234', a b c d", 0), Nil)
     val ansf = pr.funListParse(new Scanner(" AVE(  a,  'b  ahe' , -0.2e2.0, +9e8  ),  MIN(a), b , c,,  ", 0), Nil)
+    println(ansf)
     val ansexp = pr.expParse(new Scanner("  1<= 2 and (2>'3' or '3'!='4') and ( a>'3') UNION hello", 0),"")
 
+    /*
     import scala.io.Source
     import java.io._
     val sc = Source.fromFile("exp.txt")
@@ -260,5 +261,6 @@ object TestListParser {
       //println(line)
     }
     outf.close()
+    */
   }
 }
